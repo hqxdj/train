@@ -1,15 +1,21 @@
 package com.macro.mall.tiny.service.impl;
 
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONUtil;
 import com.github.pagehelper.PageHelper;
 import com.macro.mall.tiny.mbg.mapper.PmsBrandMapper;
 import com.macro.mall.tiny.mbg.model.PmsBrand;
 import com.macro.mall.tiny.mbg.model.PmsBrandExample;
 import com.macro.mall.tiny.service.PmsBrandService;
+import com.macro.mall.tiny.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * PmsBrandService实现类
@@ -17,12 +23,31 @@ import java.util.List;
  */
 @Service
 public class PmsBrandServiceImpl implements PmsBrandService{
+
+    private static final String DICTIONARY_TREE_REDIS_KEY = "PMS_SERVICE_DICTIONARY_TREE_REDIS";
+
+    private static final long DICTIONARY_TREE_REDIS_DURATION = 1 * 30;
+
     @Resource
     private PmsBrandMapper brandMapper;
 
+    @Autowired
+    private RedisService redisService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
     @Override
     public List<PmsBrand> listAllBrand() {
-        return brandMapper.selectByExample(new PmsBrandExample());
+        String s = redisService.get(DICTIONARY_TREE_REDIS_KEY);
+        if (StrUtil.isNotEmpty(s)) {
+            JSONArray jsonArray = JSONUtil.parseArray(s);
+            return JSONUtil.toList(jsonArray,PmsBrand.class);
+        }else {
+            List<PmsBrand> pmsBrands = brandMapper.selectByExample(new PmsBrandExample());
+            stringRedisTemplate.opsForValue().setIfAbsent(DICTIONARY_TREE_REDIS_KEY, JSONUtil.toJsonStr(pmsBrands), DICTIONARY_TREE_REDIS_DURATION, TimeUnit.SECONDS);
+            return pmsBrands;
+        }
     }
 
     @Override
