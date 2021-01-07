@@ -1,7 +1,6 @@
 package com.macro.mall.tiny.concurrent;
 
 import com.macro.mall.tiny.component.CancelOrderSender;
-import com.xxl.job.core.biz.model.ReturnT;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
 @Slf4j
